@@ -25,21 +25,24 @@ pip install --upgrade openai
 '''
 
 import assemblyai as aai
-from elevenlabs import generate, stream
+from elevenlabs import play, stream
+from elevenlabs.client import ElevenLabs
 from openai import OpenAI
+import os
 
 class AI_Assistant:
     def __init__(self):
-        aai.settings.api_key = "ASSEMBLYAI-API-KEY"
-        self.openai_client = OpenAI(api_key = "OPENAI-API-KEY")
-        self.elevenlabs_api_key = "ELEVENLABS-API-KEY"
-
+        aai.settings.api_key = os.getenv("ASSEMBLYAI_API_KEY")
+        self.openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        self.elevenlabs_client = ElevenLabs(api_key=os.getenv("ELEVENLABS_API_KEY"))
+        
         self.transcriber = None
 
         # Prompt
         self.full_transcript = [
             {"role":"system", "content":"You are a receptionist at a dental clinic. Be resourceful and efficient."},
         ]
+
 
 ###### Step 2: Real-Time Transcription with AssemblyAI ######
         
@@ -96,7 +99,7 @@ class AI_Assistant:
         print(f"\nPatient: {transcript.text}", end="\r\n")
 
         response = self.openai_client.chat.completions.create(
-            model = "gpt-3.5-turbo",
+            model = "gpt-4o",
             messages = self.full_transcript
         )
 
@@ -111,15 +114,14 @@ class AI_Assistant:
 ###### Step 4: Generate audio with ElevenLabs ######
         
     def generate_audio(self, text):
-
         self.full_transcript.append({"role":"assistant", "content": text})
         print(f"\nAI Receptionist: {text}")
 
-        audio_stream = generate(
-            api_key = self.elevenlabs_api_key,
-            text = text,
-            voice = "Rachel",
-            stream = True
+        audio_stream = self.elevenlabs_client.generate(
+            text=text,
+            voice="Rachel",
+            model="eleven_monolingual_v1",
+            stream=True
         )
 
         stream(audio_stream)
@@ -130,18 +132,3 @@ ai_assistant.generate_audio(greeting)
 ai_assistant.start_transcription()
 
         
-
-
-
-
-
-    
-
-
-
-    
-
-
-
-
-
